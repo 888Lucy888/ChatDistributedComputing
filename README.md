@@ -1,9 +1,9 @@
 # ChatDistributedComputing
 
-### Autentificación de usuario y creación de chats
+## Autentificación de usuario y creación de chats
 
-### Tecnologías a utilizar:
-####Lado del cliente
+## Tecnologías a utilizar:
+### Lado del cliente
 - Java
-####Lado del servidor
+### Lado del servidor
 - C
