@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.text.*?>
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<AnchorPane id="AnchorPane" prefHeight="800.0" prefWidth="1200.0" stylesheets="@Components.css" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="UI.MainController">
+   <children>
+      <Button fx:id="btnPlay" layoutX="521.0" layoutY="376.0" mnemonicParsing="false" onAction="#play" styleClass="btnContinue" text="Lets's start!" textFill="WHITE">
+         <font>
+            <Font name="Segoe UI Black" size="22.0" />
+         </font></Button>
+      <Label layoutX="541.0" layoutY="62.0" text="Talkie" textFill="#ff8200">
+         <font>
+            <Font name="Segoe UI Black" size="40.0" />
+         </font></Label>
+   </children>
+</AnchorPane>
