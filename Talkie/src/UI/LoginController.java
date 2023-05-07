@@ -63,7 +63,85 @@ public class LoginController implements Initializable {
     }    
     
     @FXML
-    private void login(ActionEvent event) throws IOException{
-        System.out.println("Login");
+    private void login(ActionEvent event) throws IOException, ParseException{
+        FXMLLoader loader= new FXMLLoader();
+        
+        String host = InetAddress.getLocalHost().getHostAddress();
+        
+        
+        
+        // Checks if it's the first time the user tries to login to connect with the server just once
+        if (firstTry) {
+            try {
+                socket = new Socket(host, AUTHPORT);
+                outputStream = socket.getOutputStream();
+                out = new PrintWriter(outputStream, true);
+                inputStream = socket.getInputStream();
+            } catch (UnknownHostException e) {
+                System.err.println("Error: Unknown host " + host);
+            } catch (IOException e) {
+                System.err.println("Error: I/O error with server " + host);
+            }
+        }
+
+        char response = '0';
+        String username = txtUser.getText();
+        String password = txtPass.getText();
+
+        /*String message  = username + ":" + password;
+        out.println(message);
+        out.flush();
+        response = (char) inputStream.read();
+        */
+
+        // Create a JSONObject instance 
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("username", username);
+        jsonObject.put("password", password);
+
+        // Convert the JSONObject to a JSON string:
+        String jsonString = jsonObject.toJSONString();
+
+        // Send JSON string to server
+        out.println(jsonString);
+        out.flush();
+
+        // Receive JSON response from server
+        /*JSONParser parser = new JSONParser();
+        JSONObject responseJson = (JSONObject) parser.parse(new InputStreamReader(inputStream));
+        response = ((String) responseJson.get("result")).charAt(0);
+        */
+        response = (char) inputStream.read();
+
+        if ( response == '1' ) {
+
+            Stage loginScreen = (Stage) txtUser.getScene().getWindow();
+            loginScreen.hide();
+
+            loader.setLocation(getClass().getResource("Main.fxml"));
+                
+            Stage gameStage = new Stage();
+            Parent root = null;
+            try {
+                root = loader.load();
+                MainController controller = loader.getController();
+                controller.initData(username);
+                
+                Scene sceneInstructions = new Scene(root);
+                gameStage.setTitle("Talkie");
+                gameStage.getIcons().add(new Image("file:./img/Icon.png"));
+                gameStage.setScene(sceneInstructions);
+                gameStage.show();
+            } catch (IOException ex) {
+                Logger.getLogger(SplashController.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } else if ( response == '0') {
+            firstTry = false;
+            lblError.setVisible(true);
+            lblError.setText("User or passsword incorrect, try again");
+        } else {
+            lblError.setVisible(true);
+            lblError.setText("Server not available in this moment");
+        }
     }
 }
