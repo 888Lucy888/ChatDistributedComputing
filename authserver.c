@@ -6,47 +6,91 @@
 #include <unistd.h>
 #include <cjson/cJSON.h>
 
-
 #define PORT 5001
 
-typedef struct {
-    char * username;
-    char * password;
+typedef struct
+{
+    char *username;
+    char *password;
 } User;
 
-int authenticate(int new_socket, const char * user, const char * pass) {
-    User user1 = {"user1", "pass1"};
-    User user2 = {"user2", "pass2"};
+int authenticate(int new_socket, const char *user, const char *pass)
+{
+    FILE *fp;
+    char buffer[1024];
     int login_successful = 0;
 
-    printf("\n%s:%s\n", user, pass);
-
-    // Check if username and password match hardcoded users
-    if (strcmp(user, user1.username) == 0 && strcmp(pass, user1.password) == 0) {
-        login_successful = 1;
-    } else if (strcmp(user, user2.username) == 0 && strcmp(pass, user2.password) == 0) {
-        login_successful = 1;
+    fp = fopen("database.txt", "r");
+    if (fp == NULL)
+    {
+        printf("Failed to open file");
+        return 0;
     }
 
+    while (fgets(buffer, sizeof(buffer), fp))
+    {
+        cJSON *root, *item;
+        const char *coin;
+
+        root = cJSON_Parse(buffer);
+        if (root == NULL)
+        {
+            printf("Failed to parse JSON\n");
+            continue;
+        }
+
+        item = cJSON_GetObjectItem(root, user);
+        if (cJSON_IsString(item))
+        {
+            coin = item->valuestring;
+            printf("Coin: %s\n", coin);
+            login_successful = 1;
+        }
+
+        cJSON_Delete(root);
+    }
+
+    fclose(fp);
     return login_successful;
+
+    /*     User user1 = {"user1", "pass1"};
+        User user2 = {"user2", "pass2"};
+        int login_successful = 0;
+
+        printf("\n%s:%s\n", user, pass);
+
+        // Check if username and password match hardcoded users
+        if (strcmp(user, user1.username) == 0 && strcmp(pass, user1.password) == 0)
+        {
+            login_successful = 1;
+        }
+        else if (strcmp(user, user2.username) == 0 && strcmp(pass, user2.password) == 0)
+        {
+            login_successful = 1;
+        }
+
+        return login_successful; */
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
     int server_fd, actual_socket;
     struct sockaddr_in address;
     int opt = 1;
     int addrlen = sizeof(address);
     char buffer[1024] = {0};
-    int authenticated_players = 0; 
+    int authenticated_players = 0;
 
     // Creating socket file descriptor
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
+    {
         perror("socket failed");
         exit(EXIT_FAILURE);
     }
 
     // Forcefully attaching socket to the port 5001
-    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)))
+    {
         perror("setsockopt");
         exit(EXIT_FAILURE);
     }
@@ -55,37 +99,45 @@ int main(int argc, char *argv[]) {
     address.sin_port = htons(PORT);
 
     // Forcefully attaching socket to the port 5001
-    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
+    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
+    {
         perror("bind failed");
         exit(EXIT_FAILURE);
     }
 
-    if (listen(server_fd, 3) < 0) {
+    if (listen(server_fd, 3) < 0)
+    {
         perror("listen");
         exit(EXIT_FAILURE);
     }
 
     printf("Server listening on port %d\n", PORT);
-    
-    while (1) {
+
+    while (1)
+    {
         // Accept incoming client connection
-        if ((actual_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
+        if ((actual_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0)
+        {
             perror("accept");
             exit(EXIT_FAILURE);
         }
 
         // Fork a new process to handle the client connection
         pid_t pid = fork();
-        if (pid == -1) {
+        if (pid == -1)
+        {
             perror("fork failed");
             exit(EXIT_FAILURE);
-        } else if (pid == 0) {
+        }
+        else if (pid == 0)
+        {
             // Child process
             close(server_fd);
 
             int authenticated = 0;
-        
-            while (authenticated == 0) {
+
+            while (authenticated == 0)
+            {
                 /*read(actual_socket, buffer, 1024);
 
                 int len = strlen(buffer);
@@ -115,43 +167,53 @@ int main(int argc, char *argv[]) {
                 const char *password = cJSON_GetObjectItem(json, "password")->valuestring;
 
                 authenticated = authenticate(actual_socket, username, password);
-                printf("Login result=%s\n",  authenticated ? "success" : "failure");
+                printf("Login result=%s\n", authenticated ? "success" : "failure");
 
                 cJSON *response = cJSON_CreateObject();
-                if (authenticated == 1 ) {
+                if (authenticated == 1)
+                {
                     cJSON_AddStringToObject(response, "result", "1");
-                } else {
+                }
+                else
+                {
                     cJSON_AddStringToObject(response, "result", "0");
                 }
                 char *json_str = cJSON_Print(response);
                 cJSON_Delete(response);
 
-                printf("Json String=%s\n\n",  json_str);
+                printf("Json String=%s\n\n", json_str);
 
+                // JSON
                 // Send authentication result to client
-                if (send(actual_socket, json_str, strlen(json_str), 0) <= 0) {
+                if (send(actual_socket, json_str, strlen(json_str), 0) <= 0)
+                {
                     perror("Error sending authentication result to client");
                     exit(EXIT_FAILURE);
                 }
-                
 
+                // TEST
                 // Send authentication result to client
-                /*if (send(actual_socket, authenticated == 1 ? "1" : "0", 1, 0) <= 0) {
-                    perror("Error sending authentication result to client");
-                    exit(EXIT_FAILURE);
-                }*/
+                /*    if (send(actual_socket, authenticated == 1 ? "1" : "0", 1, 0) <= 0)
+                   {
+                       perror("Error sending authentication result to client");
+                       exit(EXIT_FAILURE);
+                   } */
 
                 printf("Authentication result sent to client\n");
 
-                if (authenticated == 1) {
+                if (authenticated == 1)
+                {
                     break;
                 }
+                break;
             }
 
-             printf("Login successful\n");
-             close(actual_socket);
-             exit(0);
-        } else {
+            printf("Login successful\n");
+            close(actual_socket);
+            exit(0);
+        }
+        else
+        {
             // Parent process
             close(actual_socket);
         }
