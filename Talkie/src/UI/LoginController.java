@@ -50,7 +50,7 @@ public class LoginController implements Initializable {
     @FXML
     private Label lblError;
 
-    private final static int AUTHPORT = 5000;
+    private final static int AUTHPORT = 5001;
     private Socket socket;
     private OutputStream outputStream;
     private InputStream inputStream;
