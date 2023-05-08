@@ -5,7 +5,6 @@ package UI;
  * and open the template in the editor.
  */
 
-
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -41,13 +40,17 @@ public class LoginController implements Initializable {
     /**
      * Initializes the controller class.
      */
-    
-    @FXML private TextField txtUser;
-    @FXML private PasswordField txtPass;
-    @FXML private Button btnLogin;
-    @FXML private Label lblError;
 
-    private final static int AUTHPORT = 5001;
+    @FXML
+    private TextField txtUser;
+    @FXML
+    private PasswordField txtPass;
+    @FXML
+    private Button btnLogin;
+    @FXML
+    private Label lblError;
+
+    private final static int AUTHPORT = 5000;
     private Socket socket;
     private OutputStream outputStream;
     private InputStream inputStream;
@@ -60,17 +63,16 @@ public class LoginController implements Initializable {
         txtPass.setText("pass1");
         txtUser.setText("user1");
         firstTry = true;
-    }    
-    
+    }
+
     @FXML
-    private void login(ActionEvent event) throws IOException, ParseException{
-        FXMLLoader loader= new FXMLLoader();
-        
+    private void login(ActionEvent event) throws IOException, ParseException {
+        FXMLLoader loader = new FXMLLoader();
+
         String host = InetAddress.getLocalHost().getHostAddress();
-        
-        
-        
-        // Checks if it's the first time the user tries to login to connect with the server just once
+
+        // Checks if it's the first time the user tries to login to connect with the
+        // server just once
         if (firstTry) {
             try {
                 socket = new Socket(host, AUTHPORT);
@@ -88,13 +90,14 @@ public class LoginController implements Initializable {
         String username = txtUser.getText();
         String password = txtPass.getText();
 
-        /*String message  = username + ":" + password;
-        out.println(message);
-        out.flush();
-        response = (char) inputStream.read();
-        */
+        /*
+         * String message = username + ":" + password;
+         * out.println(message);
+         * out.flush();
+         * response = (char) inputStream.read();
+         */
 
-        // Create a JSONObject instance 
+        // Create a JSONObject instance
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("username", username);
         jsonObject.put("password", password);
@@ -106,27 +109,30 @@ public class LoginController implements Initializable {
         out.println(jsonString);
         out.flush();
 
+        // JSON
         // Receive JSON response from server
-        /*JSONParser parser = new JSONParser();
+        JSONParser parser = new JSONParser();
         JSONObject responseJson = (JSONObject) parser.parse(new InputStreamReader(inputStream));
+        System.out.println(responseJson);
         response = ((String) responseJson.get("result")).charAt(0);
-        */
-        response = (char) inputStream.read();
+        System.out.println(response);
+        // TEST
+        // response = (char) inputStream.read();
 
-        if ( response == '1' ) {
+        if (response == '1') {
 
             Stage loginScreen = (Stage) txtUser.getScene().getWindow();
             loginScreen.hide();
 
             loader.setLocation(getClass().getResource("Main.fxml"));
-                
+
             Stage gameStage = new Stage();
             Parent root = null;
             try {
                 root = loader.load();
                 MainController controller = loader.getController();
                 controller.initData(username);
-                
+
                 Scene sceneInstructions = new Scene(root);
                 gameStage.setTitle("Talkie");
                 gameStage.getIcons().add(new Image("file:./img/Icon.png"));
@@ -135,8 +141,8 @@ public class LoginController implements Initializable {
             } catch (IOException ex) {
                 Logger.getLogger(SplashController.class.getName()).log(Level.SEVERE, null, ex);
             }
-        } else if ( response == '0') {
-            firstTry = false;
+        } else if (response == '0') {
+            // firstTry = false;
             lblError.setVisible(true);
             lblError.setText("User or passsword incorrect, try again");
         } else {
