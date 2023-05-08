@@ -1,0 +1,24 @@
+docker start ubnt-cont-1 
+docker start ubnt-cont-3 
+docker exec -it ubnt-cont-3 bash
+cd ./distributed_computing/P4_Extra_Servidor/codes
+
+****** SERVER ******
+cc authserver.c -o authserver
+./authserver
+
+
+** if error -> bind: Address already in use
+netstat -tulpn
+kill <pid>
+
+sudo apt-get install libcjson-dev
+
+sudo apt-get install mlocate
+sudo updatedb
+locate libcjson.so
+/usr/lib/x86_64-linux-gnu/libcjson.so
+export LD_LIBRARY_PATH=/path/to/cjson/library:$LD_LIBRARY_PATH
+
+
+cc authserver.c -o authserver -lcjson -L/usr/lib/x86_64-linux-gnu/
