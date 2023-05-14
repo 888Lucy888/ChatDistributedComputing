@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <cjson/cJSON.h>
 
-#define PORT 5001
+#define PORT 5000
 
 typedef struct
 {
@@ -14,7 +14,22 @@ typedef struct
     char *password;
 } User;
 
-int authenticate(int new_socket, const char *user, const char *pass)
+int xor (int a, int b) {
+    int q;
+    q = a ^ b;
+    return q;
+}
+
+    void xor_crypt(char *key, char *data, int data_len)
+{
+    int key_len = strlen(key);
+    for (int i = 0; i < data_len; i++)
+    {
+        data[i] = data[i] ^ key[i % key_len];
+    }
+}
+
+int authenticate(const char *user, const char *pass)
 {
     FILE *fp;
     char buffer[1024];
@@ -74,12 +89,62 @@ int authenticate(int new_socket, const char *user, const char *pass)
 
 int main(int argc, char *argv[])
 {
-    int server_fd, actual_socket;
+    /* // ENCRYPTION TEST
+    char jsonMsg[] = "{\"username\":\"user1\",\"password\":\"pass1\"}";
+    int json_len = strlen(jsonMsg);
+    char key[] = "secret_key";
+
+    xor_crypt(key, jsonMsg, json_len);
+    printf("Encrypted JSON: %s\n", jsonMsg);
+    xor_crypt(key, jsonMsg, json_len);
+    printf("Decrypted JSON: %s\n", jsonMsg);
+
+    // Parse decrypted JSON string
+    cJSON *root = cJSON_Parse(jsonMsg);
+    if (root == NULL)
+    {
+        printf("Error parsing JSON: %s\n", cJSON_GetErrorPtr());
+        return 1;
+    }
+
+    char *name = cJSON_GetObjectItem(root, "username")->valuestring;
+    char *pswd = cJSON_GetObjectItem(root, "password")->valuestring;
+
+    printf("Name: %s\nPswrd: %s\n", name, pswd);
+
+    int authenticated = 0;
+    authenticated = authenticate(name, pswd);
+    printf("Login result=%s\n", authenticated ? "success" : "failure");
+
+    cJSON *response = cJSON_CreateObject();
+    if (authenticated == 1)
+    {
+        cJSON_AddStringToObject(response, "result", "1");
+    }
+    else
+    {
+        cJSON_AddStringToObject(response, "result", "0");
+    }
+    char *json_str = cJSON_Print(response);
+    cJSON_Delete(response);
+
+    printf("Json String=%s\n\n", json_str);
+
+    int jsonR_len = strlen(json_str);
+    xor_crypt(key, json_str, jsonR_len);
+    printf("Encrypted JSON Response: %s\n", json_str);
+    xor_crypt(key, json_str, jsonR_len);
+    printf("Dencrypted JSON Response: %s\n", json_str);
+    // END TEST */
+
+    int server_fd,
+        actual_socket;
     struct sockaddr_in address;
     int opt = 1;
     int addrlen = sizeof(address);
     char buffer[1024] = {0};
     int authenticated_players = 0;
+    char key[] = "secret_key";
 
     // Creating socket file descriptor
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
@@ -162,11 +227,26 @@ int main(int argc, char *argv[])
                 */
 
                 read(actual_socket, buffer, 1024);
-                cJSON *json = cJSON_Parse(buffer);
-                const char *username = cJSON_GetObjectItem(json, "username")->valuestring;
-                const char *password = cJSON_GetObjectItem(json, "password")->valuestring;
+                // DECIFRAR MENSAJE
+                // SI NO FUNCIONA: - CHECAR LENGTH DEL BUFFER, - PASAR MENSAJE DEL BUFFER A OTRA VARIABLE (USAR VARIABLE PARA LO DE ABAJO EN VEZ DE buffer) strcmpy
+                int json_len = strlen(buffer);
+                xor_crypt(key, buffer, json_len);
 
-                authenticated = authenticate(actual_socket, username, password);
+                // PARSING FOR AUTH
+                cJSON *root = cJSON_Parse(buffer);
+                if (root == NULL)
+                {
+                    printf("Error parsing JSON: %s\n", cJSON_GetErrorPtr());
+                    return 1;
+                }
+
+                char *name = cJSON_GetObjectItem(root, "username")->valuestring;
+                char *pswd = cJSON_GetObjectItem(root, "password")->valuestring;
+
+                printf("Name: %s\nPswrd: %s\n", name, pswd);
+
+                int authenticated = 0;
+                authenticated = authenticate(name, pswd);
                 printf("Login result=%s\n", authenticated ? "success" : "failure");
 
                 cJSON *response = cJSON_CreateObject();
@@ -183,7 +263,12 @@ int main(int argc, char *argv[])
 
                 printf("Json String=%s\n\n", json_str);
 
-                // JSON
+                // CIFRAR MENSAJE
+                int jsonR_len = strlen(json_str);
+                xor_crypt(key, json_str, jsonR_len);
+                printf("Encrypted JSON Response: %s\n", json_str);
+
+                // MANDAR MENSAJE JSON CIFRADO
                 // Send authentication result to client
                 if (send(actual_socket, json_str, strlen(json_str), 0) <= 0)
                 {
