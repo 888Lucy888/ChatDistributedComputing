@@ -5,8 +5,11 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <cjson/cJSON.h>
+#include <time.h>
+#include <sys/stat.h>
+#include <errno.h>
 
-#define PORT 5000
+#define PORT 5001
 
 typedef struct
 {
@@ -20,7 +23,7 @@ int xor (int a, int b) {
     return q;
 }
 
-    void xor_crypt(char *key, char *data, int data_len)
+void xor_crypt(char *key, char *data, int data_len)
 {
     int key_len = strlen(key);
     for (int i = 0; i < data_len; i++)
@@ -67,24 +70,109 @@ int authenticate(const char *user, const char *pass)
 
     fclose(fp);
     return login_successful;
+}
 
-    /*     User user1 = {"user1", "pass1"};
-        User user2 = {"user2", "pass2"};
-        int login_successful = 0;
+char * microAuth(cJSON *json) {
+    /*
+    // DECIFRAR MENSAJE
+    // SI NO FUNCIONA: - CHECAR LENGTH DEL BUFFER, - PASAR MENSAJE DEL BUFFER A OTRA VARIABLE (USAR VARIABLE PARA LO DE ABAJO EN VEZ DE buffer) strcmpy
+    int json_len = strlen(buffer);
+    xor_crypt(key, buffer, json_len);
 
-        printf("\n%s:%s\n", user, pass);
+    // PARSING FOR AUTH
+    cJSON *root = cJSON_Parse(buffer);
+    if (root == NULL)
+    {
+        printf("Error parsing JSON: %s\n", cJSON_GetErrorPtr());
+        return 1;
+    }
 
-        // Check if username and password match hardcoded users
-        if (strcmp(user, user1.username) == 0 && strcmp(pass, user1.password) == 0)
-        {
-            login_successful = 1;
+    char *name = cJSON_GetObjectItem(root, "username")->valuestring;
+    char *pswd = cJSON_GetObjectItem(root, "password")->valuestring;
+
+    printf("Name: %s\nPswrd: %s\n", name, pswd);
+
+    int authenticated = 0;
+    */
+    const char *username = cJSON_GetObjectItem(json, "username")->valuestring;
+    const char *password = cJSON_GetObjectItem(json, "password")->valuestring;
+
+    int authenticated = authenticate(username, password);
+    printf("Login result=%s\n", authenticated ? "success" : "failure");
+
+    cJSON *response = cJSON_CreateObject();
+    if (authenticated == 1)
+    {
+        cJSON_AddStringToObject(response, "result", "1");
+        time_t currentTime = time(NULL);  // get current time
+        struct tm *localTime = localtime(&currentTime);  // convert to local time
+        char timeString[80];
+        strftime(timeString, sizeof(timeString), "%Y%m%d%H%M%S", localTime);  // format time as string
+        printf("Current time: %s\n", timeString);
+        cJSON_AddStringToObject(response, "token", timeString);
+    }
+    else
+    {
+        cJSON_AddStringToObject(response, "result", "0");
+    }
+    char *json_str = cJSON_Print(response);
+    cJSON_Delete(response);
+}
+
+int createGroupFiles(const char *groupname)
+{
+    char group_dir[30];
+    char conv_file[100];
+    char users_file[100];
+    struct stat st;
+    snprintf(group_dir, sizeof(group_dir), "./groups/%s", groupname);
+    if (stat(group_dir, &st) == 0 && S_ISDIR(st.st_mode)) {
+        printf("Group directory already exists: %s\n", group_dir);
+        return 0;
+    } else {
+        if (mkdir(group_dir, 0777) != 0) {
+            printf("Failed to create group directory: %s\n", strerror(errno));
+            exit(EXIT_FAILURE);
+        } else {
+            printf("Group directory created successfully: %s\n", group_dir);
         }
-        else if (strcmp(user, user2.username) == 0 && strcmp(pass, user2.password) == 0)
-        {
-            login_successful = 1;
-        }
+    }
 
-        return login_successful; */
+    snprintf(conv_file, sizeof(conv_file), "%s/%s.conv", group_dir, groupname);
+    snprintf(users_file, sizeof(users_file), "%s/%s.users", group_dir, groupname);
+    FILE *conv_fp = fopen(conv_file, "w");
+    FILE *users_fp = fopen(users_file, "w");
+    
+    if (conv_fp == NULL || users_fp == NULL) {
+        printf("Failed to create group files: %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    } else {
+        printf("Group files created successfully: %s, %s\n", conv_file, users_file);
+        fclose(conv_fp);
+        fclose(users_fp);
+        return 1;
+    }
+}
+
+
+char * microGrp(cJSON *json) {
+    const char *username = cJSON_GetObjectItem(json, "username")->valuestring;
+    const char *groupname = cJSON_GetObjectItem(json, "groupname")->valuestring;
+
+    int createSuccesfully = createGroupFiles(groupname);
+    printf("Create files = %s\n", createSuccesfully ? "success" : "failure");
+
+    cJSON *response = cJSON_CreateObject();
+    cJSON_AddStringToObject(response, "username", username);
+    cJSON_AddStringToObject(response, "groupname", groupname);
+
+    if (createSuccesfully == 1) {
+        cJSON_AddStringToObject(response, "result", "1");
+    } else {
+        cJSON_AddStringToObject(response, "result", "0");
+    }
+    char *json_str = cJSON_Print(response);
+    cJSON_Delete(response);
 }
 
 int main(int argc, char *argv[])
@@ -199,101 +287,38 @@ int main(int argc, char *argv[])
             // Child process
             close(server_fd);
 
-            int authenticated = 0;
+            read(actual_socket, buffer, 1024);
+                
+            cJSON *json = cJSON_Parse(buffer);
+            const char *service = cJSON_GetObjectItem(json, "service")->valuestring;
 
-            while (authenticated == 0)
-            {
-                /*read(actual_socket, buffer, 1024);
-
-                int len = strlen(buffer);
-                if (len > 0 && buffer[len-1] == '\n') {
-                    buffer[len-1] = '\0';
-                    if (buffer[len-2] == '\r') {
-                        buffer[len-2] = '\0';
-                    }
-                }
-
-                char *user = strtok(buffer, ":");
-                char *pswrd = strtok(NULL, ":");
-
-                authenticated = authenticate(actual_socket, user, pswrd);
-                printf("Login result=%s\n",  authenticated ? "success" : "failure");
-
-                // Send authentication result to client
-                if (send(actual_socket, authenticated == 1 ? "1" : "0", 1, 0) <= 0) {
-                    perror("Error sending authentication result to client");
-                    exit(EXIT_FAILURE);
-                }
-                */
-
-                read(actual_socket, buffer, 1024);
-                // DECIFRAR MENSAJE
-                // SI NO FUNCIONA: - CHECAR LENGTH DEL BUFFER, - PASAR MENSAJE DEL BUFFER A OTRA VARIABLE (USAR VARIABLE PARA LO DE ABAJO EN VEZ DE buffer) strcmpy
-                int json_len = strlen(buffer);
-                xor_crypt(key, buffer, json_len);
-
-                // PARSING FOR AUTH
-                cJSON *root = cJSON_Parse(buffer);
-                if (root == NULL)
-                {
-                    printf("Error parsing JSON: %s\n", cJSON_GetErrorPtr());
-                    return 1;
-                }
-
-                char *name = cJSON_GetObjectItem(root, "username")->valuestring;
-                char *pswd = cJSON_GetObjectItem(root, "password")->valuestring;
-
-                printf("Name: %s\nPswrd: %s\n", name, pswd);
-
-                int authenticated = 0;
-                authenticated = authenticate(name, pswd);
-                printf("Login result=%s\n", authenticated ? "success" : "failure");
-
-                cJSON *response = cJSON_CreateObject();
-                if (authenticated == 1)
-                {
-                    cJSON_AddStringToObject(response, "result", "1");
-                }
-                else
-                {
-                    cJSON_AddStringToObject(response, "result", "0");
-                }
-                char *json_str = cJSON_Print(response);
-                cJSON_Delete(response);
-
-                printf("Json String=%s\n\n", json_str);
-
-                // CIFRAR MENSAJE
-                int jsonR_len = strlen(json_str);
-                xor_crypt(key, json_str, jsonR_len);
-                printf("Encrypted JSON Response: %s\n", json_str);
-
-                // MANDAR MENSAJE JSON CIFRADO
-                // Send authentication result to client
-                if (send(actual_socket, json_str, strlen(json_str), 0) <= 0)
-                {
-                    perror("Error sending authentication result to client");
-                    exit(EXIT_FAILURE);
-                }
-
-                // TEST
-                // Send authentication result to client
-                /*    if (send(actual_socket, authenticated == 1 ? "1" : "0", 1, 0) <= 0)
-                   {
-                       perror("Error sending authentication result to client");
-                       exit(EXIT_FAILURE);
-                   } */
-
-                printf("Authentication result sent to client\n");
-
-                if (authenticated == 1)
-                {
-                    break;
-                }
-                break;
+            char *json_str;
+            if (strcmp(service, "auth") == 0) {
+                printf("\n\n********* Auth *********\n");
+                json_str = microAuth(json);
+                
+            } else {
+                printf("\n\n********* Group *********\n");
+                json_str = microGrp(json);
             }
 
-            printf("Login successful\n");
+            printf("Json String=%s\n\n", json_str);
+            
+            // CIFRAR MENSAJE
+            /*int jsonR_len = strlen(json_str);
+            xor_crypt(key, json_str, jsonR_len);
+            printf("Encrypted JSON Response: %s\n", json_str);
+            */
+    
+            // Send authentication result to client
+            if (send(actual_socket, json_str, strlen(json_str), 0) <= 0)
+            {
+                perror("Error sending authentication result to client");
+                exit(EXIT_FAILURE);
+            }
+
+
+            printf("Request successful\n");
             close(actual_socket);
             exit(0);
         }
