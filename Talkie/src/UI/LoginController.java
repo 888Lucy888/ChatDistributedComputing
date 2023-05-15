@@ -55,14 +55,12 @@ public class LoginController implements Initializable {
     private OutputStream outputStream;
     private InputStream inputStream;
     private PrintWriter out;
-    private boolean firstTry;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         lblError.setVisible(false);
         txtPass.setText("pass1");
         txtUser.setText("user1");
-        firstTry = true;
     }
 
     @FXML
@@ -70,20 +68,18 @@ public class LoginController implements Initializable {
         FXMLLoader loader = new FXMLLoader();
 
         String host = InetAddress.getLocalHost().getHostAddress();
+        String key = "secret_key";
 
-        // Checks if it's the first time the user tries to login to connect with the
-        // server just once
-        if (firstTry) {
-            try {
-                socket = new Socket(host, AUTHPORT);
-                outputStream = socket.getOutputStream();
-                out = new PrintWriter(outputStream, true);
-                inputStream = socket.getInputStream();
-            } catch (UnknownHostException e) {
-                System.err.println("Error: Unknown host " + host);
-            } catch (IOException e) {
-                System.err.println("Error: I/O error with server " + host);
-            }
+        // Connect with the server
+        try {
+            socket = new Socket(host, AUTHPORT);
+            outputStream = socket.getOutputStream();
+            out = new PrintWriter(outputStream, true);
+            inputStream = socket.getInputStream();
+        } catch (UnknownHostException e) {
+            System.err.println("Error: Unknown host " + host);
+        } catch (IOException e) {
+            System.err.println("Error: I/O error with server " + host);
         }
 
         char response = '0';
@@ -99,27 +95,42 @@ public class LoginController implements Initializable {
 
         // Create a JSONObject instance
         JSONObject jsonObject = new JSONObject();
+        jsonObject.put("service", "auth");
         jsonObject.put("username", username);
         jsonObject.put("password", password);
 
         // Convert the JSONObject to a JSON string:
         String jsonString = jsonObject.toJSONString();
+        //String jsonString = "{\"username\":\"user1\", \"password\":pass1}";
+        // Encrypt JSON string
+        /*String encryptedJson = xorEncrypt(key, jsonString);
+        System.out.println("Encrypted JSON: " + encryptedJson);
+        */
 
         // Send JSON string to server
+        //out.println(encryptedJson);
         out.println(jsonString);
         out.flush();
 
         // JSON
-        // Receive JSON response from server
+        // Receive JSON Encrypted response from server
+        /*byte[] data = new byte[1024];
+        inputStream.read(data);
+        encryptedJson = new String(data);
+
+        // Decrypt JSON string
+        String decryptedJson = xorEncrypt(key, encryptedJson);
+        //JSONObject responseJson = new JSONObject(decryptedJson);
+        */
+
         JSONParser parser = new JSONParser();
         JSONObject responseJson = (JSONObject) parser.parse(new InputStreamReader(inputStream));
         System.out.println(responseJson);
         response = ((String) responseJson.get("result")).charAt(0);
-        System.out.println(response);
-        // TEST
-        // response = (char) inputStream.read();
 
         if (response == '1') {
+            String token = (String) responseJson.get("token");
+            System.out.println("Token: " + token);
 
             Stage loginScreen = (Stage) txtUser.getScene().getWindow();
             loginScreen.hide();
@@ -142,12 +153,20 @@ public class LoginController implements Initializable {
                 Logger.getLogger(SplashController.class.getName()).log(Level.SEVERE, null, ex);
             }
         } else if (response == '0') {
-            // firstTry = false;
             lblError.setVisible(true);
             lblError.setText("User or passsword incorrect, try again");
         } else {
             lblError.setVisible(true);
             lblError.setText("Server not available in this moment");
         }
+    }
+
+    private static String xorEncrypt(String key, String data) {
+        StringBuilder sb = new StringBuilder();
+        int keyLength = key.length();
+        for (int i = 0; i < data.length(); i++) {
+            sb.append((char)(data.charAt(i) ^ key.charAt(i % keyLength)));
+        }
+        return sb.toString();
     }
 }
