@@ -28,6 +28,7 @@ import java.net.*;
 import java.io.*;
 
 import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
@@ -68,7 +69,7 @@ public class LoginController implements Initializable {
         FXMLLoader loader = new FXMLLoader();
 
         String host = InetAddress.getLocalHost().getHostAddress();
-        String key = "secret_key";
+        int key = 8;
 
         // Connect with the server
         try {
@@ -86,13 +87,6 @@ public class LoginController implements Initializable {
         String username = txtUser.getText();
         String password = txtPass.getText();
 
-        /*
-         * String message = username + ":" + password;
-         * out.println(message);
-         * out.flush();
-         * response = (char) inputStream.read();
-         */
-
         // Create a JSONObject instance
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("service", "auth");
@@ -101,31 +95,32 @@ public class LoginController implements Initializable {
 
         // Convert the JSONObject to a JSON string:
         String jsonString = jsonObject.toJSONString();
-        //String jsonString = "{\"username\":\"user1\", \"password\":pass1}";
+        
         // Encrypt JSON string
-        /*String encryptedJson = xorEncrypt(key, jsonString);
-        System.out.println("Encrypted JSON: " + encryptedJson);
-        */
+        String encryptedJson = caesarEncrypt(key, jsonString);
+        System.out.println("encryptedJson: " + encryptedJson);
 
         // Send JSON string to server
-        //out.println(encryptedJson);
-        out.println(jsonString);
+        out.println(encryptedJson);
         out.flush();
 
-        // JSON
-        // Receive JSON Encrypted response from server
-        /*byte[] data = new byte[1024];
-        inputStream.read(data);
-        encryptedJson = new String(data);
 
-        // Decrypt JSON string
-        String decryptedJson = xorEncrypt(key, encryptedJson);
-        //JSONObject responseJson = new JSONObject(decryptedJson);
-        */
 
+
+        // Read the encrypted response from the server
+        byte[] data = new byte[1024];
+        int bytesRead = inputStream.read(data);
+        String encryptedResp = new String(data, 0, bytesRead);
+        System.out.println("encryptedResp: " + encryptedResp);
+
+        // Decrypt the JSON string
+        String decryptedJson = caesarDecrypt(key, encryptedResp);
+        System.out.println("decryptedJson: " + decryptedJson);
+
+        // Parse the decrypted JSON string
         JSONParser parser = new JSONParser();
-        JSONObject responseJson = (JSONObject) parser.parse(new InputStreamReader(inputStream));
-        System.out.println(responseJson);
+        JSONObject responseJson = (JSONObject) parser.parse(decryptedJson);
+
         response = ((String) responseJson.get("result")).charAt(0);
 
         if (response == '1') {
@@ -161,12 +156,21 @@ public class LoginController implements Initializable {
         }
     }
 
-    private static String xorEncrypt(String key, String data) {
-        StringBuilder sb = new StringBuilder();
-        int keyLength = key.length();
-        for (int i = 0; i < data.length(); i++) {
-            sb.append((char)(data.charAt(i) ^ key.charAt(i % keyLength)));
+    public static String caesarEncrypt(int shift, String plaintext) {
+        StringBuilder ciphertext = new StringBuilder();
+        for (int i = 0; i < plaintext.length(); i++) {
+            char c = plaintext.charAt(i);
+            if (Character.isLetter(c)) {
+                int base = Character.isLowerCase(c) ? 'a' : 'A';
+                c = (char)(((int)c - base + shift) % 26 + base);
+            }
+            ciphertext.append(c);
         }
-        return sb.toString();
+        return ciphertext.toString();
     }
+
+    public static String caesarDecrypt(int shift, String ciphertext) {
+        return caesarEncrypt(26 - shift,ciphertext);
+    }
+    
 }
