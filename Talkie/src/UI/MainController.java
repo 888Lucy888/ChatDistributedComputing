@@ -7,7 +7,6 @@ package UI;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.InetAddress;
@@ -61,7 +60,8 @@ public class MainController implements Initializable {
     @FXML
     private void createGroup(ActionEvent event) throws IOException, ParseException{
         String host = InetAddress.getLocalHost().getHostAddress();
-        
+        int key = 8;
+
         // Connect with the server
         try {
             socket = new Socket(host, AUTHPORT);
@@ -77,13 +77,6 @@ public class MainController implements Initializable {
         char response = '0';
         String groupname = txtGroupName.getText();
 
-        /*
-         * String message = username + ":" + password;
-         * out.println(message);
-         * out.flush();
-         * response = (char) inputStream.read();
-         */
-
         // Create a JSONObject instance
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("service", "group");
@@ -93,12 +86,27 @@ public class MainController implements Initializable {
         // Convert the JSONObject to a JSON string:
         String jsonString = jsonObject.toJSONString();
 
-        out.println(jsonString);
+        // Encrypt JSON string
+        String encryptedJson = caesarEncrypt(key, jsonString);
+
+        // Send JSON string to server
+        out.println(encryptedJson);
         out.flush();
 
+
+
+
+        // Read the encrypted response from the server
+        byte[] data = new byte[1024];
+        int bytesRead = inputStream.read(data);
+        String encryptedResp = new String(data, 0, bytesRead);
+
+        // Decrypt the JSON string
+        String decryptedJson = caesarDecrypt(key, encryptedResp);
+
+        // Parse the decrypted JSON string
         JSONParser parser = new JSONParser();
-        JSONObject responseJson = (JSONObject) parser.parse(new InputStreamReader(inputStream));
-        System.out.println(responseJson);
+        JSONObject responseJson = (JSONObject) parser.parse(decryptedJson);
         response = ((String) responseJson.get("result")).charAt(0);
 
         lblResult.setVisible(true);
@@ -109,5 +117,63 @@ public class MainController implements Initializable {
         } else {
             lblResult.setText("Server not available in this moment");
         }
+    }
+
+    public static String caesarEncrypt(int shift, String plaintext) {
+        StringBuilder encryptedText = new StringBuilder();
+        
+        for (int i = 0; i < plaintext.length(); i++) {
+            char c = plaintext.charAt(i);
+            
+            if (Character.isLetter(c) || Character.isDigit(c)) {
+                int base;
+                if (Character.isLowerCase(c)) {
+                    base = 'a';
+                } else if (Character.isUpperCase(c)) {
+                    base = 'A';
+                } else {
+                    if((int)c>52){
+                        encryptedText.append((char)(c-5));
+                    }else{
+                        encryptedText.append((char)(c+5));
+                    }
+                    continue;
+                }
+                c = (char)(((int)c - base + shift) % 26 + base);
+            }
+            
+            encryptedText.append(c);
+        }
+        
+        return encryptedText.toString();
+    }
+
+    public static String caesarDecrypt(int shift, String ciphertext) {
+        StringBuilder decryptedText = new StringBuilder();
+        
+        for (int i = 0; i < ciphertext.length(); i++) {
+            char c = ciphertext.charAt(i);
+            
+            if (Character.isLetter(c) || Character.isDigit(c)) {
+                int base;
+                if (Character.isLowerCase(c)) {
+                    base = 'a';
+                } else if (Character.isUpperCase(c)) {
+                    base = 'A';
+                } else {
+                    if((int)c>52){
+                        decryptedText.append((char)(c-5));
+                    }else{
+                        decryptedText.append((char)(c+5));
+                    }
+                    continue;
+                }
+                c = (char)(((int)c - base - shift + 26) % 26 + base);
+            }
+            
+            decryptedText.append(c);
+        }
+        
+        return decryptedText.toString();
     }
 }

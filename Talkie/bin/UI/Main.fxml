@@ -10,13 +10,31 @@
 
 <AnchorPane id="AnchorPane" prefHeight="800.0" prefWidth="1200.0" stylesheets="@Components.css" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="UI.MainController">
    <children>
-      <Button fx:id="btnPlay" layoutX="521.0" layoutY="376.0" mnemonicParsing="false" onAction="#play" styleClass="btnContinue" text="Lets's start!" textFill="WHITE">
+      <Button fx:id="btnPlay" layoutX="514.0" layoutY="376.0" mnemonicParsing="false" onAction="#createGroup" styleClass="btnContinue" text="Create group" textFill="WHITE">
          <font>
             <Font name="Segoe UI Black" size="22.0" />
-         </font></Button>
+         </font>
+      </Button>
       <Label layoutX="541.0" layoutY="62.0" text="Talkie" textFill="#ff8200">
          <font>
             <Font name="Segoe UI Black" size="40.0" />
          </font></Label>
+      <Label fx:id="lblResult" layoutX="500.0" layoutY="471.0" text="Group Created" textAlignment="CENTER" textFill="#ff8200">
+         <font>
+            <Font name="Segoe UI Black" size="28.0" />
+         </font>
+      </Label>
+      <VBox layoutX="364.0" layoutY="201.0" prefHeight="138.0" prefWidth="473.0">
+         <children>
+            <Label alignment="CENTER" prefHeight="60.0" prefWidth="473.0" text="Insert the name of the group" textAlignment="CENTER" textFill="#39a9ff">
+               <font>
+                  <Font name="Segoe UI Black" size="28.0" />
+               </font></Label>
+            <TextField fx:id="txtGroupName" prefHeight="31.0" prefWidth="282.0" promptText="Group name">
+               <font>
+                  <Font name="Segoe UI Black" size="20.0" />
+               </font></TextField>
+         </children>
+      </VBox>
    </children>
 </AnchorPane>
