@@ -336,6 +336,39 @@ char *microChat(cJSON *json)
     return json_str;
 }
 
+char *microMsg(cJSON *json)
+{
+    char filePath[256];
+    char line[256];
+
+    const char *username = cJSON_GetObjectItem(json, "username")->valuestring;
+    const char *groupname = cJSON_GetObjectItem(json, "groupname")->valuestring;
+    const char *message = cJSON_GetObjectItem(json, "message")->valuestring;
+
+    int accessedSuccesfully = getGroupFile(groupname, username);
+    printf("Obtained group chat = %s\n", accessedSuccesfully ? "success" : "failure");
+
+    cJSON *response = cJSON_CreateObject();
+
+    if (accessedSuccesfully == 1)
+    {
+        // ADD TO CHAT FILE
+        snprintf(filePath, sizeof(filePath), "./groups/%s/%s.conv", groupname, groupname);
+        FILE *file = fopen(filePath, "a");
+        cJSON_AddStringToObject(response, "result", "1");
+        fprintf(file, "%s: %s\n", username, message);
+        fclose(file);
+    }
+    else
+    {
+        cJSON_AddStringToObject(response, "result", "0");
+    }
+
+    char *json_str = cJSON_PrintUnformatted(response);
+    cJSON_Delete(response);
+    return json_str;
+}
+
 int main(int argc, char *argv[])
 {
 
@@ -440,6 +473,11 @@ int main(int argc, char *argv[])
             {
                 printf("\n\n********* Chat *********\n");
                 json_str = microChat(json);
+            }
+            else if (strcmp(service, "msg") == 0)
+            {
+                printf("\n\n********* Message *********\n");
+                json_str = microMsg(json);
             }
 
             printf("Json String=%s\n\n", json_str);
