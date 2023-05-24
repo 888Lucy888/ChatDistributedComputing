@@ -120,6 +120,7 @@ public class MainController implements Initializable {
     }
 
     public static String caesarEncrypt(int shift, String plaintext) {
+<<<<<<< HEAD
         StringBuilder encryptedText = new StringBuilder();
         
         for (int i = 0; i < plaintext.length(); i++) {
@@ -175,5 +176,21 @@ public class MainController implements Initializable {
         }
         
         return decryptedText.toString();
+=======
+        StringBuilder ciphertext = new StringBuilder();
+        for (int i = 0; i < plaintext.length(); i++) {
+            char c = plaintext.charAt(i);
+            if (Character.isLetter(c)) {
+                int base = Character.isLowerCase(c) ? 'a' : 'A';
+                c = (char)(((int)c - base + shift) % 26 + base);
+            }
+            ciphertext.append(c);
+        }
+        return ciphertext.toString();
+    }
+
+    public static String caesarDecrypt(int shift, String ciphertext) {
+        return caesarEncrypt(26 - shift,ciphertext);
+>>>>>>> af14d9567d76a8c0d86b897edfad2d9c40310769
     }
 }

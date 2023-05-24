@@ -28,6 +28,7 @@ import java.net.*;
 import java.io.*;
 
 import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
@@ -155,7 +156,11 @@ public class LoginController implements Initializable {
         }
     }
 
+<<<<<<< HEAD
     public static String caesarEncrypt(int shift, String plaintext) {
+=======
+public static String caesarEncrypt(int shift, String plaintext) {
+>>>>>>> af14d9567d76a8c0d86b897edfad2d9c40310769
         StringBuilder encryptedText = new StringBuilder();
         
         for (int i = 0; i < plaintext.length(); i++) {
@@ -184,7 +189,11 @@ public class LoginController implements Initializable {
         return encryptedText.toString();
     }
 
+<<<<<<< HEAD
     public static String caesarDecrypt(int shift, String ciphertext) {
+=======
+public static String caesarDecrypt(int shift, String ciphertext) {
+>>>>>>> af14d9567d76a8c0d86b897edfad2d9c40310769
         StringBuilder decryptedText = new StringBuilder();
         
         for (int i = 0; i < ciphertext.length(); i++) {
