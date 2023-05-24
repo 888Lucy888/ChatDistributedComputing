@@ -4,8 +4,8 @@ docker exec -it ubnt-cont-3 bash
 cd ./distributed_computing/P4_Extra_Servidor/codes
 
 ****** SERVER ******
-cc authserver.c -o authserver
-./authserver
+cc server.c ./functions/*.c -o server -lcjson -L/usr/lib/x86_64-linux-gnu/
+./server
 
 
 ** if error -> bind: Address already in use
@@ -21,4 +21,3 @@ locate libcjson.so
 export LD_LIBRARY_PATH=/path/to/cjson/library:$LD_LIBRARY_PATH
 
 
-cc authserver.c -o authserver -lcjson -L/usr/lib/x86_64-linux-gnu/
