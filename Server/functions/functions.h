@@ -38,4 +38,8 @@ char *microAddU(cJSON *json);
 char *microChat(cJSON *json);
 char *microMsg(cJSON *json);
 
+// Global Functions
+char *microUsers(cJSON *json);
+char *microGroups(cJSON *json);
+
 #endif

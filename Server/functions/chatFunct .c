@@ -23,9 +23,11 @@ int getGroupFile(const char *groupname, const char *username)
             {
                 printf("User '%s' found in the file.\n", username);
                 fclose(file);
+                closedir(dir);
                 return 1;
             }
         }
+        fclose(file);
         closedir(dir);
     }
     else
@@ -33,6 +35,7 @@ int getGroupFile(const char *groupname, const char *username)
         printf("Group does not exist.\n");
         return 0;
     }
+    return 0;
 }
 
 char *microChat(cJSON *json)
@@ -47,6 +50,7 @@ char *microChat(cJSON *json)
     printf("Obtained group chat = %s\n", accessedSuccesfully ? "success" : "failure");
 
     cJSON *response = cJSON_CreateObject();
+    cJSON *chatArray = cJSON_CreateArray();
 
     if (accessedSuccesfully == 1)
     {
@@ -77,24 +81,30 @@ char *microChat(cJSON *json)
 
                 // Split the line into key and value
                 *colonPosition = '\0'; // Replace colon with null terminator
-                char *key = line;
-                char *value = colonPosition + 1;
+                char *user = line;
+                char *message = colonPosition + 1;
 
-                // Remove leading/trailing whitespace from key and value
-                while (*key == ' ' || *key == '\t')
-                    key++;
-                while (*value == ' ' || *value == '\t')
-                    value++;
-                char *keyEnd = key + strlen(key) - 1;
-                char *valueEnd = value + strlen(value) - 1;
-                while (keyEnd >= key && (*keyEnd == ' ' || *keyEnd == '\t'))
-                    *keyEnd-- = '\0';
-                while (valueEnd >= value && (*valueEnd == ' ' || *valueEnd == '\t'))
-                    *valueEnd-- = '\0';
+                // Remove leading/trailing whitespace from user and message
+                while (*user == ' ' || *user == '\t')
+                    user++;
+                while (*message == ' ' || *message == '\t')
+                    message++;
+                char *userEnd = user + strlen(user) - 1;
+                char *messageEnd = message + strlen(message) - 1;
+                while (userEnd >= user && (*userEnd == ' ' || *userEnd == '\t'))
+                    *userEnd-- = '\0';
+                while (messageEnd >= message && (*messageEnd == ' ' || *messageEnd == '\t'))
+                    *messageEnd-- = '\0';
 
-                // Create cJSON string object with the key and value
-                cJSON_AddItemToObject(response, key, cJSON_CreateString(value));
+                // Create cJSON object for the chat entry
+                cJSON *chatEntry = cJSON_CreateObject();
+                cJSON_AddStringToObject(chatEntry, "user", user);
+                cJSON_AddStringToObject(chatEntry, "message", message);
+
+                // Add the chat entry to the array
+                cJSON_AddItemToArray(chatArray, chatEntry);
             }
+            cJSON_AddItemToObject(response, "chats", chatArray);
         }
     }
     else

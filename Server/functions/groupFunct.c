@@ -46,6 +46,7 @@ int createGroupFiles(const char *groupname)
 
 char *microCrteGrp(cJSON *json)
 {
+    char filePath[256];
     const char *username = cJSON_GetObjectItem(json, "username")->valuestring;
     const char *groupname = cJSON_GetObjectItem(json, "groupname")->valuestring;
 
@@ -59,6 +60,11 @@ char *microCrteGrp(cJSON *json)
     if (createSuccesfully == 1)
     {
         cJSON_AddStringToObject(response, "result", "1");
+        // ADD TO USER FILE
+        snprintf(filePath, sizeof(filePath), "./db/groups/%s/%s.users", groupname, groupname);
+        FILE *file = fopen(filePath, "a");
+        fprintf(file, "%s\n", username);
+        fclose(file);
     }
     else
     {
@@ -86,7 +92,7 @@ char *microAddU(cJSON *json)
     if (accessedSuccesfully == 1)
     {
         // ADD TO USER FILE
-        snprintf(filePath, sizeof(filePath), "./groups/%s/%s.users", groupname, groupname);
+        snprintf(filePath, sizeof(filePath), "./db/groups/%s/%s.users", groupname, groupname);
         FILE *file = fopen(filePath, "a");
         cJSON_AddStringToObject(response, "result", "1");
         fprintf(file, "%s\n", userToAdd);

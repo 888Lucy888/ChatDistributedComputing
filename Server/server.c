@@ -1,7 +1,7 @@
 
 #include "./functions/functions.h"
 
-#define PORT 5000
+#define PORT 5001
 
 int main(int argc, char *argv[])
 {
@@ -117,6 +117,16 @@ int main(int argc, char *argv[])
             {
                 printf("\n********* Message *********\n");
                 json_str = microMsg(json);
+            }
+            else if (strcmp(service, "users") == 0)
+            {
+                printf("\n********* Get Users *********\n");
+                json_str = microUsers(json);
+            }
+            else if (strcmp(service, "groups") == 0)
+            {
+                printf("\n********* Get Groups *********\n");
+                json_str = microGroups(json);
             }
 
             printf("Json String=%s\n", json_str);
