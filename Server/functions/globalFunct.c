@@ -111,53 +111,53 @@ char *microGroupsNo(cJSON *json)
                 FILE *users_file = fopen(users_file_path, "r");
                 if (users_file != NULL)
                 {
+                    int found = 0;
                     char line[256];
                     while (fgets(line, sizeof(line), users_file))
                     {
-                        printf("Hi");
                         if (line[strlen(line) - 1] == '\n')
                             line[strlen(line) - 1] = '\0';
 
                         if (strcmp(line, username) == 0)
                         {
-                            continue;
-                        }
-                        else
-                        {
-                            char reqs_file_path[1024];
-                            snprintf(reqs_file_path, sizeof(reqs_file_path), "%s/%s/%s.reqs", group_dir, entry->d_name, entry->d_name);
-                            FILE *reqs_file = fopen(reqs_file_path, "r");
-                            if (reqs_file != NULL)
-                            {
-                                fseek(reqs_file, 0L, SEEK_END);
-                                long reqs_size = ftell(reqs_file);
-                                fclose(reqs_file);
-                                printf("Hi");
-
-                                if (reqs_size > 0)
-                                {
-                                    cJSON *chatEntry = cJSON_CreateObject();
-                                    cJSON_AddStringToObject(chatEntry, "groupName", entry->d_name);
-                                    cJSON_AddNumberToObject(chatEntry, "userWaiting", 1);
-                                    cJSON_AddItemToArray(groupArray, chatEntry);
-                                }
-                                else
-                                {
-                                    cJSON *chatEntry = cJSON_CreateObject();
-                                    cJSON_AddStringToObject(chatEntry, "groupName", entry->d_name);
-                                    cJSON_AddNumberToObject(chatEntry, "userWaiting", 0);
-                                    cJSON_AddItemToArray(groupArray, chatEntry);
-                                }
-                            }
-                            break;
+                            found = 1;
                         }
                     }
-                    fclose(users_file);
+                    if (!found)
+                    {
+                        char reqs_file_path[1024];
+                        snprintf(reqs_file_path, sizeof(reqs_file_path), "%s/%s/%s.reqs", group_dir, entry->d_name, entry->d_name);
+                        FILE *reqs_file = fopen(reqs_file_path, "r");
+                        if (reqs_file != NULL)
+                        {
+                            fseek(reqs_file, 0L, SEEK_END);
+                            long reqs_size = ftell(reqs_file);
+                            fclose(reqs_file);
+                            printf("Hi");
+
+                            if (reqs_size > 0)
+                            {
+                                cJSON *chatEntry = cJSON_CreateObject();
+                                cJSON_AddStringToObject(chatEntry, "groupName", entry->d_name);
+                                cJSON_AddNumberToObject(chatEntry, "userWaiting", 1);
+                                cJSON_AddItemToArray(groupArray, chatEntry);
+                            }
+                            else
+                            {
+                                cJSON *chatEntry = cJSON_CreateObject();
+                                cJSON_AddStringToObject(chatEntry, "groupName", entry->d_name);
+                                cJSON_AddNumberToObject(chatEntry, "userWaiting", 0);
+                                cJSON_AddItemToArray(groupArray, chatEntry);
+                            }
+                        }
+                    }
                 }
+
+                fclose(users_file);
             }
         }
-        closedir(dir);
     }
+    closedir(dir);
 
     cJSON_AddItemToObject(response, "groups", groupArray);
 
