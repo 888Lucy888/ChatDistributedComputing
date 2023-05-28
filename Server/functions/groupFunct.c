@@ -193,6 +193,39 @@ char *microAddU(cJSON *json)
     return json_str;
 }
 
+char *microAddReq(cJSON *json)
+{
+    char filePath[256];
+    char line[256];
+
+    const char *username = cJSON_GetObjectItem(json, "username")->valuestring;
+    const char *groupname = cJSON_GetObjectItem(json, "groupname")->valuestring;
+    const char *userToAdd = cJSON_GetObjectItem(json, "add")->valuestring;
+
+    int accessedSuccesfully = getGroupFile(groupname, username);
+    printf("Obtained group chat = %s\n", accessedSuccesfully ? "success" : "failure");
+
+    cJSON *response = cJSON_CreateObject();
+
+    if (accessedSuccesfully == 1)
+    {
+        // ADD TO USER FILE
+        snprintf(filePath, sizeof(filePath), "./db/groups/%s/%s.reqs", groupname, groupname);
+        FILE *file = fopen(filePath, "a");
+        cJSON_AddStringToObject(response, "result", "1");
+        fprintf(file, "%s\n", userToAdd);
+        fclose(file);
+    }
+    else
+    {
+        cJSON_AddStringToObject(response, "result", "0");
+    }
+
+    char *json_str = cJSON_PrintUnformatted(response);
+    cJSON_Delete(response);
+    return json_str;
+}
+
 char *microDeleteU(cJSON *json)
 {
     const char *userToDelete = cJSON_GetObjectItem(json, "deleteUser")->valuestring;
