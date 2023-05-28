@@ -183,3 +183,13 @@ char *microGroupsNo(cJSON *json)
     cJSON_Delete(response);
     return json_str;
 }
+
+char *microConnect(cJSON *json)
+{
+    cJSON *response = cJSON_CreateObject();
+    cJSON_AddStringToObject(response, "result", "1");
+
+    char *json_str = cJSON_PrintUnformatted(response);
+    cJSON_Delete(response);
+    return json_str;
+}

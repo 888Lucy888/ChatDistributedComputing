@@ -93,6 +93,11 @@ int main(int argc, char *argv[])
             const char *service = cJSON_GetObjectItem(json, "service")->valuestring;
 
             char *json_str;
+            if (strcmp(service, "connecting") == 0)
+            {
+                printf("\n********* Returns 1 If User Connection *********\n");
+                json_str = microConnect(json);
+            }
             if (strcmp(service, "auth") == 0)
             {
                 printf("\n********* Authenticate User *********\n");

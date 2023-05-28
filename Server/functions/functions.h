@@ -47,5 +47,6 @@ char *microUsers(cJSON *json);
 char *microUsersAdmin(cJSON *json);
 char *microGroups(cJSON *json);
 char *microGroupsNo(cJSON *json);
+char *microConnect(cJSON *json);
 
 #endif
