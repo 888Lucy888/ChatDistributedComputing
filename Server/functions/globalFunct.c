@@ -146,7 +146,6 @@ char *microGroupsNo(cJSON *json)
                             fseek(reqs_file, 0L, SEEK_END);
                             long reqs_size = ftell(reqs_file);
                             fclose(reqs_file);
-                            printf("Hi");
 
                             if (reqs_size > 0)
                             {
