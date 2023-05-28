@@ -33,6 +33,7 @@ int createGroupFiles(const char *groupname);
 int getGroupFile(const char *groupname, const char *username);
 char *microCrteGrp(cJSON *json);
 char *microAddU(cJSON *json);
+char *microDeleteU(cJSON *json);
 
 // Chat Functions
 char *microChat(cJSON *json);
@@ -40,6 +41,8 @@ char *microMsg(cJSON *json);
 
 // Global Functions
 char *microUsers(cJSON *json);
+char *microUsersAdmin(cJSON *json);
 char *microGroups(cJSON *json);
+char *microGroupsNo(cJSON *json);
 
 #endif

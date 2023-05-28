@@ -1,54 +1,93 @@
 #include "functions.h"
-
-char *microUsers(cJSON *json)
+char *microGroups(cJSON *json)
 {
+    const char group_dir[] = "./db/groups/";
     cJSON *response = cJSON_CreateObject();
     const char *username = cJSON_GetObjectItem(json, "username")->valuestring;
-    FILE *fp;
-    char buffer[1024];
 
-    fp = fopen("./db/loginDB.txt", "r");
-    if (fp == NULL)
+    cJSON *groupArray = cJSON_CreateArray();
+
+    DIR *dir = opendir(group_dir);
+    if (dir)
     {
-        printf("Failed to open file");
-        cJSON_AddStringToObject(response, "result", "0");
-    }
-    else
-    {
-        cJSON *userArray = cJSON_CreateArray();
-        cJSON_AddStringToObject(response, "result", "1");
-        while (fgets(buffer, sizeof(buffer), fp))
+        struct dirent *entry;
+        while ((entry = readdir(dir)) != NULL)
         {
-            cJSON *root = cJSON_Parse(buffer);
-            if (root == NULL)
+            if (entry->d_type == DT_DIR)
             {
-                printf("Failed to parse JSON\n");
-                continue;
-            }
+                if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+                    continue;
 
-            cJSON *currentKey = root->child;
-            while (currentKey != NULL)
-            {
-                if (strcmp(currentKey->string, username) != 0)
+                char users_file_path[1024];
+                snprintf(users_file_path, sizeof(users_file_path), "%s/%s/%s.users", group_dir, entry->d_name, entry->d_name);
+                FILE *users_file = fopen(users_file_path, "r");
+                if (users_file != NULL)
                 {
-                    cJSON_AddItemToArray(userArray, cJSON_CreateString(currentKey->string));
-                }
-                currentKey = currentKey->next;
-            }
+                    // Count the number of lines in the .users file
+                    int totUsers = 0;
+                    char line[256];
+                    while (fgets(line, sizeof(line), users_file))
+                    {
+                        totUsers++;
+                    }
+                    fclose(users_file);
 
-            cJSON_Delete(root);
+                    // Create cJSON object for the chat entry
+                    cJSON *chatEntry = cJSON_CreateObject();
+                    cJSON_AddStringToObject(chatEntry, "groupName", entry->d_name);
+                    cJSON_AddNumberToObject(chatEntry, "totUsers", totUsers);
+
+                    char conv_file_path[1024];
+                    snprintf(conv_file_path, sizeof(conv_file_path), "%s/%s/%s.conv", group_dir, entry->d_name, entry->d_name);
+                    FILE *conv_file = fopen(conv_file_path, "r");
+                    if (conv_file != NULL)
+                    {
+                        // Count the number of lines in the .conv file
+                        int totMsg = 0;
+                        while (fgets(line, sizeof(line), conv_file))
+                        {
+                            totMsg++;
+                        }
+                        fclose(conv_file);
+
+                        cJSON_AddNumberToObject(chatEntry, "totMsg", totMsg);
+                    }
+                    else
+                    {
+                        cJSON_AddNumberToObject(chatEntry, "totMsg", 0);
+                    }
+
+                    // Check if the username is in the first line of the .users file
+                    FILE *users_file_check = fopen(users_file_path, "r");
+                    if (users_file_check != NULL)
+                    {
+                        fgets(line, sizeof(line), users_file_check);
+                        if (strcmp(line, username) == 0)
+                        {
+                            cJSON_AddNumberToObject(chatEntry, "isAdmin", 1);
+                        }
+                        else
+                        {
+                            cJSON_AddNumberToObject(chatEntry, "isAdmin", 0);
+                        }
+                        fclose(users_file_check);
+                    }
+
+                    cJSON_AddItemToArray(groupArray, chatEntry);
+                }
+            }
         }
-        cJSON_AddItemToObject(response, "users", userArray);
+        closedir(dir);
     }
 
-    fclose(fp);
+    cJSON_AddItemToObject(response, "groups", groupArray);
 
     char *json_str = cJSON_PrintUnformatted(response);
     cJSON_Delete(response);
     return json_str;
 }
 
-char *microGroups(cJSON *json)
+char *microGroupsNo(cJSON *json)
 {
     const char group_dir[] = "./db/groups/";
     cJSON *response = cJSON_CreateObject();
@@ -75,12 +114,41 @@ char *microGroups(cJSON *json)
                     char line[256];
                     while (fgets(line, sizeof(line), users_file))
                     {
+                        printf("Hi");
                         if (line[strlen(line) - 1] == '\n')
                             line[strlen(line) - 1] = '\0';
 
                         if (strcmp(line, username) == 0)
                         {
-                            cJSON_AddItemToArray(groupArray, cJSON_CreateString(entry->d_name));
+                            continue;
+                        }
+                        else
+                        {
+                            char reqs_file_path[1024];
+                            snprintf(reqs_file_path, sizeof(reqs_file_path), "%s/%s/%s.reqs", group_dir, entry->d_name, entry->d_name);
+                            FILE *reqs_file = fopen(reqs_file_path, "r");
+                            if (reqs_file != NULL)
+                            {
+                                fseek(reqs_file, 0L, SEEK_END);
+                                long reqs_size = ftell(reqs_file);
+                                fclose(reqs_file);
+                                printf("Hi");
+
+                                if (reqs_size > 0)
+                                {
+                                    cJSON *chatEntry = cJSON_CreateObject();
+                                    cJSON_AddStringToObject(chatEntry, "groupName", entry->d_name);
+                                    cJSON_AddNumberToObject(chatEntry, "userWaiting", 1);
+                                    cJSON_AddItemToArray(groupArray, chatEntry);
+                                }
+                                else
+                                {
+                                    cJSON *chatEntry = cJSON_CreateObject();
+                                    cJSON_AddStringToObject(chatEntry, "groupName", entry->d_name);
+                                    cJSON_AddNumberToObject(chatEntry, "userWaiting", 0);
+                                    cJSON_AddItemToArray(groupArray, chatEntry);
+                                }
+                            }
                             break;
                         }
                     }

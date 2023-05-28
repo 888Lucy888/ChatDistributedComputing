@@ -95,38 +95,53 @@ int main(int argc, char *argv[])
             char *json_str;
             if (strcmp(service, "auth") == 0)
             {
-                printf("\n********* Auth *********\n");
+                printf("\n********* Authenticate User *********\n");
                 json_str = microAuth(json);
             }
             else if (strcmp(service, "group") == 0)
             {
-                printf("\n********* Group *********\n");
+                printf("\n********* Create Group *********\n");
                 json_str = microCrteGrp(json);
             }
             else if (strcmp(service, "addUser") == 0)
             {
-                printf("\n********* Add User *********\n");
+                printf("\n********* Add User To Group *********\n");
                 json_str = microAddU(json);
             }
             else if (strcmp(service, "chat") == 0)
             {
-                printf("\n********* Chat *********\n");
+                printf("\n********* Read Chat *********\n");
                 json_str = microChat(json);
             }
             else if (strcmp(service, "msg") == 0)
             {
-                printf("\n********* Message *********\n");
+                printf("\n********* Send Message *********\n");
                 json_str = microMsg(json);
             }
             else if (strcmp(service, "users") == 0)
             {
-                printf("\n********* Get Users *********\n");
+                printf("\n********* Get Users From Group *********\n");
                 json_str = microUsers(json);
+            }
+            else if (strcmp(service, "usersAdmin") == 0)
+            {
+                printf("\n********* Get User Data From Group If Admin*********\n");
+                json_str = microUsersAdmin(json);
             }
             else if (strcmp(service, "groups") == 0)
             {
                 printf("\n********* Get Groups *********\n");
                 json_str = microGroups(json);
+            }
+            else if (strcmp(service, "groupsNo") == 0)
+            {
+                printf("\n********* Get Groups You Are Not In *********\n");
+                json_str = microGroupsNo(json);
+            }
+            else if (strcmp(service, "deleteUser") == 0)
+            {
+                printf("\n********* Delete User From Group *********\n");
+                json_str = microDeleteU(json);
             }
 
             printf("Json String=%s\n", json_str);
