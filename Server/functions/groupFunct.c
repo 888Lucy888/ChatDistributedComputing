@@ -46,6 +46,65 @@ int createGroupFiles(const char *groupname)
     }
 }
 
+int remove_directory(const char *path)
+{
+    DIR *dir = opendir(path);
+    size_t path_len = strlen(path);
+    int error = -1;
+
+    if (dir)
+    {
+        struct dirent *entry;
+        error = 0;
+
+        while (!error && (entry = readdir(dir)))
+        {
+            char *buf;
+            size_t len;
+
+            if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, ".."))
+            {
+                continue;
+            }
+
+            len = path_len + strlen(entry->d_name) + 2;
+            buf = (char *)malloc(len);
+
+            if (buf)
+            {
+                struct stat statbuf;
+
+                snprintf(buf, len, "%s/%s", path, entry->d_name);
+
+                if (!stat(buf, &statbuf))
+                {
+                    if (S_ISDIR(statbuf.st_mode))
+                    {
+                        error = remove_directory(buf);
+                    }
+                    else
+                    {
+                        error = remove(buf);
+                    }
+                }
+                free(buf);
+            }
+            else
+            {
+                error = -1;
+            }
+        }
+        closedir(dir);
+    }
+
+    if (!error)
+    {
+        error = remove(path);
+    }
+
+    return error;
+}
+
 char *microCrteGrp(cJSON *json)
 {
     char filePath[256];
@@ -72,6 +131,30 @@ char *microCrteGrp(cJSON *json)
     {
         cJSON_AddStringToObject(response, "result", "0");
     }
+    char *json_str = cJSON_PrintUnformatted(response);
+    cJSON_Delete(response);
+    return json_str;
+}
+
+char *microDeleteChat(cJSON *json)
+{
+    const char *groupname = cJSON_GetObjectItem(json, "groupname")->valuestring;
+    char filePath[256];
+    snprintf(filePath, sizeof(filePath), "./db/groups/%s", groupname);
+
+    cJSON *response = cJSON_CreateObject();
+
+    int deletedSuccessfully = remove_directory(filePath);
+
+    if (deletedSuccessfully == 0)
+    {
+        cJSON_AddStringToObject(response, "result", "1");
+    }
+    else
+    {
+        cJSON_AddStringToObject(response, "result", "0");
+    }
+
     char *json_str = cJSON_PrintUnformatted(response);
     cJSON_Delete(response);
     return json_str;
@@ -119,6 +202,62 @@ char *microDeleteU(cJSON *json)
 
     snprintf(filePath, sizeof(filePath), "./db/groups/%s/%s.users", groupname, groupname);
     snprintf(tempFilePath, sizeof(tempFilePath), "./db/groups/%s/%s.users.tmp", groupname, groupname);
+
+    FILE *file = fopen(filePath, "r");
+    FILE *tempFile = fopen(tempFilePath, "w");
+
+    cJSON *response = cJSON_CreateObject();
+
+    if (file != NULL && tempFile != NULL)
+    {
+        char line[256];
+        int userDeleted = 0;
+
+        while (fgets(line, sizeof(line), file))
+        {
+            if (line[strlen(line) - 1] == '\n')
+                line[strlen(line) - 1] = '\0';
+
+            if (strcmp(line, userToDelete) == 0)
+            {
+                userDeleted = 1;
+                continue;
+            }
+
+            fprintf(tempFile, "%s\n", line);
+        }
+
+        fclose(file);
+        fclose(tempFile);
+
+        // Replace the original file with the modified temporary file
+        remove(filePath);
+        rename(tempFilePath, filePath);
+
+        if (userDeleted)
+            cJSON_AddStringToObject(response, "result", "1");
+        else
+            cJSON_AddStringToObject(response, "result", "0");
+    }
+    else
+    {
+        cJSON_AddStringToObject(response, "result", "0");
+    }
+
+    char *json_str = cJSON_PrintUnformatted(response);
+    cJSON_Delete(response);
+    return json_str;
+}
+
+char *microDeleteReq(cJSON *json)
+{
+    const char *userToDelete = cJSON_GetObjectItem(json, "deleteUser")->valuestring;
+    const char *groupname = cJSON_GetObjectItem(json, "groupname")->valuestring;
+    char filePath[256];
+    char tempFilePath[256];
+
+    snprintf(filePath, sizeof(filePath), "./db/groups/%s/%s.reqs", groupname, groupname);
+    snprintf(tempFilePath, sizeof(tempFilePath), "./db/groups/%s/%s.reqs.tmp", groupname, groupname);
 
     FILE *file = fopen(filePath, "r");
     FILE *tempFile = fopen(tempFilePath, "w");

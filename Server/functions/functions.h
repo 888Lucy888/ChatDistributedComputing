@@ -34,6 +34,8 @@ int getGroupFile(const char *groupname, const char *username);
 char *microCrteGrp(cJSON *json);
 char *microAddU(cJSON *json);
 char *microDeleteU(cJSON *json);
+char *microDeleteReq(cJSON *json);
+char *microDeleteChat(cJSON *json);
 
 // Chat Functions
 char *microChat(cJSON *json);

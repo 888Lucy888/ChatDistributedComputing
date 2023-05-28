@@ -143,6 +143,16 @@ int main(int argc, char *argv[])
                 printf("\n********* Delete User From Group *********\n");
                 json_str = microDeleteU(json);
             }
+            else if (strcmp(service, "deleteReq") == 0)
+            {
+                printf("\n********* Delete Request From User To Group *********\n");
+                json_str = microDeleteReq(json);
+            }
+            else if (strcmp(service, "deleteChat") == 0)
+            {
+                printf("\n********* Delete Chat Group *********\n");
+                json_str = microDeleteChat(json);
+            }
 
             printf("Json String=%s\n", json_str);
             caesarEncrypt(key, json_str);
