@@ -1,4 +1,5 @@
 #include "functions.h"
+
 char *microGroups(cJSON *json)
 {
     const char group_dir[] = "./db/groups/";
@@ -23,57 +24,60 @@ char *microGroups(cJSON *json)
                 FILE *users_file = fopen(users_file_path, "r");
                 if (users_file != NULL)
                 {
-                    // Count the number of lines in the .users file
-                    int totUsers = 0;
+                    // Check if the username is in the .users file
+                    int usernameFound = 0;
                     char line[256];
                     while (fgets(line, sizeof(line), users_file))
                     {
-                        totUsers++;
+                        line[strcspn(line, "\n")] = '\0'; // Remove trailing newline character
+                        if (strcmp(line, username) == 0)
+                        {
+                            usernameFound = 1;
+                            break;
+                        }
                     }
                     fclose(users_file);
 
-                    // Create cJSON object for the chat entry
-                    cJSON *chatEntry = cJSON_CreateObject();
-                    cJSON_AddStringToObject(chatEntry, "groupName", entry->d_name);
-                    cJSON_AddNumberToObject(chatEntry, "totUsers", totUsers);
-
-                    char conv_file_path[1024];
-                    snprintf(conv_file_path, sizeof(conv_file_path), "%s/%s/%s.conv", group_dir, entry->d_name, entry->d_name);
-                    FILE *conv_file = fopen(conv_file_path, "r");
-                    if (conv_file != NULL)
+                    if (usernameFound)
                     {
-                        // Count the number of lines in the .conv file
-                        int totMsg = 0;
-                        while (fgets(line, sizeof(line), conv_file))
+                        // Create cJSON object for the chat entry
+                        cJSON *chatEntry = cJSON_CreateObject();
+                        cJSON_AddStringToObject(chatEntry, "groupName", entry->d_name);
+
+                        // Count the number of lines in the .users file
+                        int totUsers = 0;
+                        users_file = fopen(users_file_path, "r");
+                        while (fgets(line, sizeof(line), users_file))
                         {
-                            totMsg++;
+                            totUsers++;
                         }
-                        fclose(conv_file);
+                        fclose(users_file);
 
-                        cJSON_AddNumberToObject(chatEntry, "totMsg", totMsg);
-                    }
-                    else
-                    {
-                        cJSON_AddNumberToObject(chatEntry, "totMsg", 0);
-                    }
+                        cJSON_AddNumberToObject(chatEntry, "totUsers", totUsers);
 
-                    // Check if the username is in the first line of the .users file
-                    FILE *users_file_check = fopen(users_file_path, "r");
-                    if (users_file_check != NULL)
-                    {
-                        fgets(line, sizeof(line), users_file_check);
-                        if (strcmp(line, username) == 0)
+                        char conv_file_path[1024];
+                        snprintf(conv_file_path, sizeof(conv_file_path), "%s/%s/%s.conv", group_dir, entry->d_name, entry->d_name);
+                        FILE *conv_file = fopen(conv_file_path, "r");
+                        if (conv_file != NULL)
                         {
-                            cJSON_AddNumberToObject(chatEntry, "isAdmin", 1);
+                            // Count the number of lines in the .conv file
+                            int totMsg = 0;
+                            while (fgets(line, sizeof(line), conv_file))
+                            {
+                                totMsg++;
+                            }
+                            fclose(conv_file);
+
+                            cJSON_AddNumberToObject(chatEntry, "totMsg", totMsg);
                         }
                         else
                         {
-                            cJSON_AddNumberToObject(chatEntry, "isAdmin", 0);
+                            cJSON_AddNumberToObject(chatEntry, "totMsg", 0);
                         }
-                        fclose(users_file_check);
-                    }
 
-                    cJSON_AddItemToArray(groupArray, chatEntry);
+                        cJSON_AddNumberToObject(chatEntry, "isAdmin", 1);
+                        cJSON_AddItemToArray(groupArray, chatEntry);
+                    }
                 }
             }
         }
