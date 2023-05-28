@@ -143,25 +143,31 @@ char *microGroupsNo(cJSON *json)
                         FILE *reqs_file = fopen(reqs_file_path, "r");
                         if (reqs_file != NULL)
                         {
-                            fseek(reqs_file, 0L, SEEK_END);
-                            long reqs_size = ftell(reqs_file);
-                            fclose(reqs_file);
-
-                            if (reqs_size > 0)
+                            int foundReq = 0;
+                            char lineReq[256];
+                            while (fgets(lineReq, sizeof(lineReq), reqs_file))
                             {
-                                cJSON *chatEntry = cJSON_CreateObject();
-                                cJSON_AddStringToObject(chatEntry, "groupName", entry->d_name);
+                                if (lineReq[strlen(lineReq) - 1] == '\n')
+                                    lineReq[strlen(lineReq) - 1] = '\0';
+
+                                if (strcmp(lineReq, username) == 0)
+                                {
+                                    foundReq = 1;
+                                }
+                            }
+                            cJSON *chatEntry = cJSON_CreateObject();
+                            cJSON_AddStringToObject(chatEntry, "groupName", entry->d_name);
+                            if (foundReq)
+                            {
                                 cJSON_AddNumberToObject(chatEntry, "userWaiting", 1);
-                                cJSON_AddItemToArray(groupArray, chatEntry);
                             }
                             else
                             {
-                                cJSON *chatEntry = cJSON_CreateObject();
-                                cJSON_AddStringToObject(chatEntry, "groupName", entry->d_name);
                                 cJSON_AddNumberToObject(chatEntry, "userWaiting", 0);
-                                cJSON_AddItemToArray(groupArray, chatEntry);
                             }
+                            cJSON_AddItemToArray(groupArray, chatEntry);
                         }
+                        fclose(reqs_file);
                     }
                 }
 
